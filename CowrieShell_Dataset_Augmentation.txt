@@ -1,0 +1,99 @@
+/* Python Code for Image Data Augmentation
+
+#Importing necessary libraries
+import os
+import numpy as np
+import matplotlib.pyplot as plt
+from tensorflow.keras.preprocessing.image import load_img, img_to_array, array_to_img
+from skimage.transform import rotate
+import cv2
+
+# Define directories
+train_dir = 'path_to_training_directory'
+augmented_dir = 'path_to_augmenting_directory'
+
+# Create directory if it doesn't exist
+if not os.path.exists(augmented_dir):
+    os.makedirs(augmented_dir)
+
+def adjust_brightness(img, factor):
+    x = img_to_array(img)  # Convert PIL image to numpy array
+    hsv = cv2.cvtColor(x.astype(np.uint8), cv2.COLOR_BGR2HSV)  # Convert to HSV
+    h, s, v = cv2.split(hsv)
+    v = np.clip(v * factor, 0, 255).astype(np.uint8)
+    hsv = cv2.merge((h, s, v))
+    return cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR)  # Convert back to BGR and return as numpy array
+
+def adjust_contrast(img, factor):
+    x = img_to_array(img)  # Convert PIL image to numpy array
+    lab = cv2.cvtColor(x.astype(np.uint8), cv2.COLOR_BGR2LAB)  # Convert to LAB
+    l, a, b = cv2.split(lab)
+    l = np.clip(l * factor, 0, 255).astype(np.uint8)
+    lab = cv2.merge((l, a, b))
+    return cv2.cvtColor(lab, cv2.COLOR_LAB2BGR)  # Convert back to BGR and return as numpy array
+
+# Function to save augmented images
+def save_augmented_image(img, img_name, prefix):
+    save_path = os.path.join(augmented_dir, f'{prefix}_{img_name}')
+    array_to_img(img).save(save_path)
+
+# Loop through each image in the training directory
+for subdir, dirs, files in os.walk(train_dir):
+    for file in files:
+        img_path = os.path.join(subdir, file)
+        img = load_img(img_path)    # Load the image
+        x = img_to_array(img)       # Convert to numpy array
+
+        # Augmentation: Cropping borders (cropping 2.5% from each side)
+        crop_percentage = 0.025
+        h, w, _ = x.shape
+        crop_h, crop_w = int(h * crop_percentage), int(w * crop_percentage)
+        cropped = x[crop_h:h-crop_h, crop_w:w-crop_w]
+        save_augmented_image(cropped, file, 'cropped')
+
+        # Augmentation: Rotation by 45 degrees
+        rot_45 = rotate(x, angle=45, mode='constant', cval=0)
+        save_augmented_image(rot_45, file, 'rot_45')
+
+        # Augmentation: Rotation by 90 degrees
+        rot_90 = rotate(x, angle=90, mode='constant', cval=0)
+        save_augmented_image(rot_90, file, 'rot_90')
+
+        # Augmentation: Rotation by 120 degrees
+        rot_120 = rotate(x, angle=120, mode='constant', cval=0)
+        save_augmented_image(rot_120, file, 'rot_120')
+
+        # Augmentation: Rotation by 180 degrees
+        rot_180 = rotate(x, angle=180, mode='constant', cval=0)
+        save_augmented_image(rot_180, file, 'rot_180')
+
+        # Augmentation: Rotation by 270 degrees
+        rot_270 = rotate(x, angle=270, mode='constant', cval=0)
+        save_augmented_image(rot_270, file, 'rot_270')
+
+        # Augmentation: Horizontal Flip
+        flipped_horizontally = np.fliplr(x)
+        save_augmented_image(flipped_horizontally, file, 'flip_horizontal')
+
+        # Augmentation: Vertical Flip
+        flipped_vertically = np.flipud(x)
+        save_augmented_image(flipped_vertically, file, 'flip_vertical')
+
+        # Example of brightness and contrast adjustments
+        brighter_img = adjust_brightness(img, 1.2)  # Increase brightness
+        lower_contrast_img = adjust_contrast(img, 0.5)   # Decrease contrast
+
+        # Save augmented images
+        save_augmented_image(brighter_img, file, 'brighter')
+        save_augmented_image(lower_contrast_img, file, 'low_contrast')
+
+# Display some augmented images for visualization
+sample_images = os.listdir(augmented_dir)[:9]  # Get a sample of 9 augmented images
+plt.figure(figsize=(10, 10))
+for i, img_name in enumerate(sample_images):
+    img_path = os.path.join(augmented_dir, img_name)
+    img = load_img(img_path)
+    plt.subplot(3, 3, i+1)
+    plt.imshow(img)
+    plt.axis('off')
+plt.show()
